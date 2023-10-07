@@ -1,0 +1,54 @@
+server {
+	 proxy_busy_buffers_size   512k;
+ proxy_buffers   4 512k;
+ proxy_buffer_size   256k;
+
+	root /var/www/html;
+
+	# Add index.php to the list if you are using PHP
+	index index.php index.html index.htm index.nginx-debian.html;
+
+	server_name playadust.social;
+
+	location / {
+		# allow php to drive
+		try_files $uri $uri/ /index.php?$query_string;
+	}
+
+	# pass PHP scripts to FastCGI server
+	location ~ \.php$ {
+		include snippets/fastcgi-php.conf;
+	#   update sock to right one
+		fastcgi_pass unix:/run/php/php8.1-fpm.sock; # /run/php/php7.4-fpm.sock;
+	# YOU NEED THESE!  otherwise the spew from php will trash the page
+		fastcgi_buffers 16 32k;
+    fastcgi_buffer_size 64k;
+    fastcgi_busy_buffers_size 64k;
+	}
+
+	# certbot does this
+    listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/playadust.social/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/playadust.social/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+
+
+
+server {
+    if ($host = playadust.social) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+	listen 80 default_server;
+	listen [::]:80 default_server;
+
+	server_name playadust.social;
+    return 404; # managed by Certbot
+
+
+}
